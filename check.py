@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Watches UCSD Surplus for new laptops / Apple Silicon Mac minis.
+Watches UCSD Surplus for new Apple Silicon Mac minis.
 Stdlib only. Keeps a JSON file of listing IDs it has already reported.
 """
 
@@ -23,14 +23,12 @@ STATE_FILE = "seen.json"
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "")  # e.g. "ucsd-surplus-a7f3k9"
 
 # --- what counts as a hit -------------------------------------------------
-WANT = re.compile(r"LAPTOP|MACBOOK|NOTEBOOK|MAC[\s-]?MINI", re.I)
+WANT = re.compile(r"MAC[\s-]?MINI", re.I)
 
-# Intel-era Mac minis we don't want. Applied only to MAC MINI hits, so an
-# Intel PC laptop still comes through. A1283/A1347/A1993 are the Apple model
+# Intel-era Mac minis we don't want. A1283/A1347/A1993 are the Apple model
 # numbers for every 2009-2018 Intel mini; Apple Silicon starts at A2348 (M1).
-IS_MINI = re.compile(r"MAC[\s-]?MINI", re.I)
 INTEL_EVIDENCE = re.compile(
-    r"\bi[357]\b|CORE\s*2|C2D|\b20(09|1[0-8])\b|\bA1283\b|\bA1347\b|\bA1993\b",
+    r"\bINTEL\b|\bi[357]\b|CORE\s*2|C2D|\b20(09|1[0-8])\b|\bA1283\b|\bA1347\b|\bA1993\b",
     re.I,
 )
 
@@ -74,11 +72,7 @@ def parse_block(block):
 
 def matches(info):
     text = f"{info['title']} {info['subtitle']}"
-    if not WANT.search(text):
-        return False
-    if IS_MINI.search(text) and INTEL_EVIDENCE.search(text):
-        return False
-    return True
+    return bool(WANT.search(text)) and not INTEL_EVIDENCE.search(text)
 
 
 def notify(title, body, url):
